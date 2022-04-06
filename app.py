@@ -410,7 +410,7 @@ def RescateCiudad(mision,ciudad,entrada,civil,robot): # GRAFICA DE RESCATE
     os.system('Rescate.png')
 
 def ExtraccionCiudad(mision,ciudad,entrada,recurso,robot):
-
+    capacidad = str(robot.capacidad)
     inicio = """digraph structs {
     node [shape=none fontname=Helvetica];
 
@@ -497,7 +497,7 @@ def ExtraccionCiudad(mision,ciudad,entrada,recurso,robot):
        """ 
     inicio += """ c [ 
       label=<Ciudad: """+ciudad.nombre+""" <BR/> Tipo de mision: """+mision+""" <BR/> Recurso extraido : """+recurso+""" <BR/>
-      Robot Utilizado: """+robot+""" ChapinFighter , Capacidad Final: """+str(robot.capacidad)+"""  <BR/>>];
+      Robot Utilizado: """+robot.nombre+""" ChapinFighter , Capacidad Final: """+capacidad+"""  <BR/>>];
       
       struct1 -> struct2
       struct2 -> c
@@ -647,5 +647,3 @@ if __name__ == '__main__':
     ventana.config(bg="#273248")
     ventana.geometry('1050x650+200+40')
     ventana.mainloop()
-
-
