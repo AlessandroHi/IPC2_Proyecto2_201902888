@@ -14,6 +14,7 @@ from Entrada import Entrada
 from UnidadesMilitar import UnidadesMilitar
 from Robot import Robot
 from PIL import ImageTk, Image
+from tkinter import messagebox
 
 
 def cofiguracion(ruta): #ANALIZADOR DEL ARCHIVO 
@@ -40,8 +41,6 @@ def cofiguracion(ruta): #ANALIZADOR DEL ARCHIVO
             if name == ciudadName:
               Lista_ciudades.reset(i)
               break
-        
-
 
         listaRecursos = Lista()
         listaCiviles = Lista()
@@ -131,14 +130,25 @@ def cofiguracion(ruta): #ANALIZADOR DEL ARCHIVO
             if nombre == robotdName:
               Lista_robots.reset(i)
               break
-        
 
       if tipo == "ChapinFighter":
         capacidad = robot.attrib["capacidad"]
       else:
         capacidad = "0"
       Lista_robots.append(Robot(nombre,tipo,int(capacidad)))
+  
+  contFi = 0
+  contRe = 0
 
+  for i in range(Lista_robots.length()):
+      if Lista_robots[i].tipo == "ChapinFighter":
+          contFi += 1
+      if Lista_robots[i].tipo == "ChapinRescue":
+          contRe += 1
+  if contFi == 0:
+      messagebox.showinfo(message="No seran posibles realizar misiones de Tipo Extraccion Recurso, por escaso de Robot tipo ChapinFighter... ", title="ADVERTENCIA!..")
+  if contRe == 0:
+      messagebox.showinfo(message="No seran posibles realizar misiones de Tipo Rescate, por escaso de Robot tipo ChapinRescue... ", title="ADVERTENCIA!..")
 
 def Buscar_archivo():  # FUNCION QUE REALIZAR LA SELECCION DEL ARCHIVO A CARGAR
 
@@ -156,13 +166,11 @@ def Buscar_archivo():  # FUNCION QUE REALIZAR LA SELECCION DEL ARCHIVO A CARGAR
     else:
         return archivo
 
-
 def cargarPisos():  # METODO PARA SELCCION DEL ARCHIVO
     archivo = Buscar_archivo()
     cofiguracion(archivo)
 
-
-def graficarCiudad(ciudad):
+def graficarCiudad(ciudad): # GRAFICA LAS CIUDADES PAR LUEGO MOSTRAR EN GUI
     inicio = """digraph structs {
     node [shape=none fontname=Helvetica];
 
@@ -219,14 +227,12 @@ def graficarCiudad(ciudad):
     crearArchivo("CiudadGraphviz.dot", inicio)
     os.system('dot.exe -Tpng CiudadGraphviz.dot -o Ciudad.png')
 
-
-def crearArchivo(ruta, contenido):
+def crearArchivo(ruta, contenido): #ESCRITURA DE ARCHIVO PLANO O DOT
     archivo = open(ruta, 'w')
     archivo.write(contenido)
     archivo.close
 
-
-def Ciudades():
+def Ciudades(): #DESPLIEGA LA LISTA DE CIUDADES
     for i in range(Lista_ciudades.length()):
         dimension = str(Lista_ciudades[i].fila)
         dimension += "X"
@@ -234,8 +240,7 @@ def Ciudades():
         table1.insert("", END, text=str(
             Lista_ciudades[i].nombre), values=(dimension))
 
-
-def Robots():
+def Robots(): #DESPLIGA LA LISTA DE ROBOTS DISPONIBLES
     for item in table2.get_children():
         table2.delete(item)
     tipoMison = comboMision.get()
@@ -249,7 +254,6 @@ def Robots():
         if tipoMison == "Extraccion Recurso" and tipo == "ChapinFighter":
             table2.insert("", END, text=str(
                 Lista_robots[i].nombre), values=(tipo, capacidad))
-
 
 def get_data():  # METODO PARA GRAFICAR CIUDADADES EN GUI
     ciudad = table1.item(table1.selection())["text"]
@@ -266,8 +270,7 @@ def get_data():  # METODO PARA GRAFICAR CIUDADADES EN GUI
                 entradas.append(cordenada)
             comboEntradas["values"] = entradas
 
-
-def change_civiles():
+def change_civiles(): #METODO PARA LA COMBINACION DE UNIDADES CIVILES
     mision = comboMision.get()
     ciudad = table1.item(table1.selection())["text"]
     unidades = []
@@ -284,8 +287,7 @@ def change_civiles():
         if mision == "Extraccion Recurso":
             comboCiviles["values"] = ["---"]
 
-
-def change_recurso():
+def change_recurso(): # METODO PAR LA COMBINACION DE RECURSOS
     mision = comboMision.get()
     ciudad = table1.item(table1.selection())["text"]
     recurso = []
@@ -299,7 +301,6 @@ def change_recurso():
                 recurso.append(cordenada)
             comboRecursos["values"] = recurso
 
-
 def MostrarImagen(ruta):  # METODO PARA GRAFICAR CIUDADADES EN GUI
     img = Image.open(ruta)
     new_img = img.resize((420, 380))
@@ -307,6 +308,226 @@ def MostrarImagen(ruta):  # METODO PARA GRAFICAR CIUDADADES EN GUI
     img2 = Label(ventana, image=render)
     img2.image = render
     img2.place(x=290, y=90)
+
+def RescateCiudad(mision,ciudad,entrada,civil,robot): # GRAFICA DE RESCATE
+
+    inicio = """digraph structs {
+    node [shape=none fontname=Helvetica];
+
+     struct1 [label=<<TABLE border="2" CELLBORDER="1" CELLSPACING="2" bgcolor="white" color="black">
+     <TR>
+        <TD  BGCOLOR="white">     </TD>
+        """
+
+# ------------------------- COLUMNAS IDENTIFIACION --------------------------------
+    for i in range(ciudad.columna):
+        inicio += """<TD  BGCOLOR="white">  """+str(i+1)+""" </TD>
+    """
+    inicio += """</TR>
+  """
+# ---------------------------------------------------------------------------------
+
+# --------------------------- INTEGRANDO FILAS Y COLUMNAS*------------------------
+    for i in range(ciudad.fila):
+        inicio += """<TR>
+        <TD  BGCOLOR="white">"""+str(i+1)+"""</TD>
+    """
+        for j in range(ciudad.columna):
+            casilla = ciudad.obtener_elem(i, j).caracteristica
+            if casilla == "Intransitable":
+                inicio += """<TD  BGCOLOR="black">   </TD>
+        """
+
+            if casilla == "Transitable":
+                inicio += """<TD  BGCOLOR="white">   </TD>
+        """
+
+            if casilla == "Entrada":
+                inicio += """<TD  BGCOLOR="green">   </TD>
+        """
+
+            if casilla == "Civil":
+                inicio += """<TD  BGCOLOR="#81FFE5">   </TD>
+        """
+
+            if casilla == "Recurso":
+                inicio += """<TD  BGCOLOR="grey57">   </TD>
+        """
+
+            if casilla == "Unidad Militar":
+                inicio += """<TD  BGCOLOR="#F1724">   </TD>
+        """
+
+        inicio += """</TR>"""
+    inicio += """</TABLE>>];
+       
+   """
+    inicio += """ struct2 [ 
+           
+       label=<<TABLE border="2" CELLBORDER="1" CELLSPACING="2" bgcolor="white" color="black">
+	  
+	  <TR>
+        <TD  BGCOLOR="black"><FONT COLOR="white">    </FONT></TD>
+        <TD BGCOLOR="white"><FONT COLOR="black">Intransitable</FONT></TD>
+    </TR>
+    <TR>
+        <TD  BGCOLOR="green"><FONT COLOR="white">    </FONT></TD>
+        <TD BGCOLOR="white"><FONT COLOR="black">Punto de entrada</FONT></TD>
+    </TR>
+       <TR>
+        <TD  BGCOLOR="white"><FONT COLOR="white">    </FONT></TD>
+        <TD BGCOLOR="white"><FONT COLOR="black">Camino</FONT></TD>
+    </TR>
+        <TR>
+        <TD  BGCOLOR="#F17245"><FONT COLOR="white">    </FONT></TD>
+        <TD BGCOLOR="white"><FONT COLOR="black">Unidad Militar</FONT></TD>
+    </TR>
+    <TR>
+        <TD  BGCOLOR="#81FFE5"><FONT COLOR="white">    </FONT></TD>
+        <TD BGCOLOR="white"><FONT COLOR="black">Unidad Civil</FONT></TD>
+    </TR>
+    <TR>
+        <TD  BGCOLOR="grey57"><FONT COLOR="white">    </FONT></TD>
+        <TD BGCOLOR="white"><FONT COLOR="black">Recurso</FONT></TD>
+    </TR>
+      
+    </TABLE>>
+       ];
+      
+       """ 
+    inicio += """ c [ 
+      label=<Ciudad: """+ciudad.nombre+""" <BR/> Tipo de mision: """+mision+""" <BR/> Unidad Civil rescatada : """+civil+""" <BR/>
+      Robot Utilizado: """+robot+""" ChapinRescue <BR/>>];
+      
+      struct1 -> struct2
+      struct2 -> c
+     }
+    """
+# ---------------------------------------------------------------------------------
+
+    crearArchivo("RescateGraphviz.dot", inicio)
+    os.system('dot.exe -Tpng RescateGraphviz.dot -o Rescate.png')
+    os.system('Rescate.png')
+
+def ExtraccionCiudad(mision,ciudad,entrada,recurso,robot):
+
+    inicio = """digraph structs {
+    node [shape=none fontname=Helvetica];
+
+     struct1 [label=<<TABLE border="2" CELLBORDER="1" CELLSPACING="2" bgcolor="white" color="black">
+     <TR>
+        <TD  BGCOLOR="white">     </TD>
+        """
+
+# ------------------------- COLUMNAS IDENTIFIACION --------------------------------
+    for i in range(ciudad.columna):
+        inicio += """<TD  BGCOLOR="white">  """+str(i+1)+""" </TD>
+    """
+    inicio += """</TR>
+  """
+# ---------------------------------------------------------------------------------
+
+# --------------------------- INTEGRANDO FILAS Y COLUMNAS*------------------------
+    for i in range(ciudad.fila):
+        inicio += """<TR>
+        <TD  BGCOLOR="white">"""+str(i+1)+"""</TD>
+    """
+        for j in range(ciudad.columna):
+            casilla = ciudad.obtener_elem(i, j).caracteristica
+            if casilla == "Intransitable":
+                inicio += """<TD  BGCOLOR="black">   </TD>
+        """
+
+            if casilla == "Transitable":
+                inicio += """<TD  BGCOLOR="white">   </TD>
+        """
+
+            if casilla == "Entrada":
+                inicio += """<TD  BGCOLOR="green">   </TD>
+        """
+
+            if casilla == "Civil":
+                inicio += """<TD  BGCOLOR="#81FFE5">   </TD>
+        """
+
+            if casilla == "Recurso":
+                inicio += """<TD  BGCOLOR="grey57">   </TD>
+        """
+
+            if casilla == "Unidad Militar":
+                inicio += """<TD  BGCOLOR="#F1724">   </TD>
+        """
+
+        inicio += """</TR>"""
+    inicio += """</TABLE>>];
+       
+   """
+    inicio += """ struct2 [ 
+           
+       label=<<TABLE border="2" CELLBORDER="1" CELLSPACING="2" bgcolor="white" color="black">
+	  
+	  <TR>
+        <TD  BGCOLOR="black"><FONT COLOR="white">    </FONT></TD>
+        <TD BGCOLOR="white"><FONT COLOR="black">Intransitable</FONT></TD>
+    </TR>
+    <TR>
+        <TD  BGCOLOR="green"><FONT COLOR="white">    </FONT></TD>
+        <TD BGCOLOR="white"><FONT COLOR="black">Punto de entrada</FONT></TD>
+    </TR>
+       <TR>
+        <TD  BGCOLOR="white"><FONT COLOR="white">    </FONT></TD>
+        <TD BGCOLOR="white"><FONT COLOR="black">Camino</FONT></TD>
+    </TR>
+        <TR>
+        <TD  BGCOLOR="#F17245"><FONT COLOR="white">    </FONT></TD>
+        <TD BGCOLOR="white"><FONT COLOR="black">Unidad Militar</FONT></TD>
+    </TR>
+    <TR>
+        <TD  BGCOLOR="#81FFE5"><FONT COLOR="white">    </FONT></TD>
+        <TD BGCOLOR="white"><FONT COLOR="black">Unidad Civil</FONT></TD>
+    </TR>
+    <TR>
+        <TD  BGCOLOR="grey57"><FONT COLOR="white">    </FONT></TD>
+        <TD BGCOLOR="white"><FONT COLOR="black">Recurso</FONT></TD>
+    </TR>
+      
+    </TABLE>>
+       ];
+      
+       """ 
+    inicio += """ c [ 
+      label=<Ciudad: """+ciudad.nombre+""" <BR/> Tipo de mision: """+mision+""" <BR/> Recurso extraido : """+recurso+""" <BR/>
+      Robot Utilizado: """+robot+""" ChapinFighter , Capacidad Final: """+str(robot.capacidad)+"""  <BR/>>];
+      
+      struct1 -> struct2
+      struct2 -> c
+     }
+    """
+# ---------------------------------------------------------------------------------
+
+    crearArchivo("RescateGraphviz.dot", inicio)
+    os.system('dot.exe -Tpng RescateGraphviz.dot -o Rescate.png')
+    os.system('Rescate.png')
+
+
+def get_data1():
+    mision = comboMision.get()
+    Nombreciudad = table1.item(table1.selection())["text"]
+    entrada = comboEntradas.get()
+    civil = comboCiviles.get()
+    recurso = comboRecursos.get()
+    robot = table2.item(table2.selection())["text"]
+
+    for i in range(Lista_ciudades.length()):
+        if Nombreciudad == Lista_ciudades[i].nombre:
+            ciudad = Lista_ciudades[i]
+            if mision == "Rescate":
+                RescateCiudad(mision,ciudad,entrada,civil,robot)
+            if mision == "Extraccion Recurso":
+                for i in range(Lista_robots.length()):
+                 if robot == Lista_robots[i].nombre:
+                     robo = Lista_robots[i]
+                     ExtraccionCiudad(mision,ciudad,entrada,recurso,robo)
 
 
 if __name__ == '__main__':
@@ -418,7 +639,7 @@ if __name__ == '__main__':
     table2.heading("Capacidad", text="Capacidad", anchor=CENTER)
     table2.place(x=740, y=220)
 
-    btnMision = Button(ventana, text="Mostrar Recorrido", width=22, height=2)
+    btnMision = Button(ventana, text="Mostrar Recorrido", width=22, height=2, command = get_data1)
     btnMision.config(fg="Black", bg="#FC7643",
                      font=("Bahnschrift SemiBold", 12))
     btnMision.place(x=790, y=560)
@@ -426,4 +647,5 @@ if __name__ == '__main__':
     ventana.config(bg="#273248")
     ventana.geometry('1050x650+200+40')
     ventana.mainloop()
+
 
